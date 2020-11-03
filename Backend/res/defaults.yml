@@ -1,0 +1,14 @@
+port: 3000
+username: admin
+password: 12345
+sawu:
+  separator: "$e%,"
+kafka:
+  broker:
+    ipaddress: "192.168.1.9"
+  consumer:
+    consumergroup: "ConsumerTest"
+    topics:
+      - topic1
+      - topic2
+      - gokafka

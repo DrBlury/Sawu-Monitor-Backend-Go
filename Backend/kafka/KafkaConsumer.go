@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"sawu-monitor/config"
+	"sawu-monitor/connector"
 	"sawu-monitor/entities"
 	"strings"
 	"syscall"
@@ -82,16 +83,21 @@ func DoKafkaConsumerStuff() {
 			case *kafka.Message:
 				fmt.Printf("%% Message on %s:\n%s\n",
 					event.TopicPartition, string(event.Value))
+				fmt.Println("==============================")
 
 				processEvent, err := deSerialize(string(event.Value))
-
-				if err {
-					fmt.Println("I deserialized and retrieved an error. Aborting.")
-					continue
+				if true == bool(err) {
+					recover()
 				}
 
 				jsonString, _ := json.Marshal(processEvent)
 				fmt.Println(string(jsonString))
+
+				connector.CreateNewEvent(processEvent)
+				if err {
+					fmt.Println("I deserialized and retrieved an error. Aborting.")
+					continue
+				}
 
 				// if event.Headers != nil {
 				// 	fmt.Printf("%% Headers: %v\n", event.Headers)
@@ -113,22 +119,17 @@ func DoKafkaConsumerStuff() {
 }
 
 func deSerialize(kafkaRecord string) (entities.NextStepEvent, bool) {
+
+	seperatorIndex := strings.Index(kafkaRecord, separator)
+	runes := []rune(kafkaRecord)
 	processEvent := new(entities.NextStepEvent)
+	processEvent.Data = string(runes[seperatorIndex+len(separator) : len(runes)])
+
+	caughtSeparator := false
 	eventValue := string(kafkaRecord)
 	eventData := strings.Split(eventValue, ",")
-
-	separatorFound := false
-	seperatorIndex := 0
 	for dataIterator := 0; dataIterator < len(eventData); dataIterator++ {
-		if separatorFound {
-			seperatorIndex = strings.Index(kafkaRecord, "")
-			runes := []rune(kafkaRecord)
-			safeSubstring := string(runes[seperatorIndex+len(separator) : len(runes)-1])
-			processEvent.Data = safeSubstring
-
-		}
 		VariableAndValue := strings.Split(eventData[dataIterator], "=")
-
 		// Switch case to add the values to the event
 		switch VariableAndValue[0] {
 		case "id":
@@ -158,9 +159,10 @@ func deSerialize(kafkaRecord string) (entities.NextStepEvent, bool) {
 		case "comingFromID":
 			processEvent.ComingFromID = VariableAndValue[1]
 		case "$e%":
-			separatorFound = true
+			caughtSeparator = true
+			break
 		default:
-			if !separatorFound {
+			if !caughtSeparator {
 				fmt.Println(VariableAndValue)
 				fmt.Println("Whatever that is... It's not a process Event.")
 				return *processEvent, true
@@ -168,5 +170,4 @@ func deSerialize(kafkaRecord string) (entities.NextStepEvent, bool) {
 		}
 	}
 	return *processEvent, false
-
 }

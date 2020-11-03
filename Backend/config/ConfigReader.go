@@ -22,6 +22,13 @@ type Conf struct {
 			Topics        []string `yaml:"topics"`
 		}
 	}
+	Database struct {
+		Server   string `yaml:"server"`
+		Port     string `yaml:"port"`
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+		Schema   string `yaml:"schema"`
+	}
 }
 
 func (c *Conf) GetDefaults() *Conf {

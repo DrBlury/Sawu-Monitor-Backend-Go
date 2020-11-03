@@ -9,6 +9,10 @@ kafka:
   consumer:
     consumergroup: "ConsumerTest"
     topics:
-      - topic1
-      - topic2
-      - gokafka
+      - bananentopic1
+database:
+  server: "192.168.1.23"
+  port: "1433"
+  user: "sa"
+  password: "MSsql123...?"
+  schema: master

@@ -1,22 +1,29 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"os"
 	"sawu-monitor/config"
+	"sawu-monitor/connector"
 	"sawu-monitor/entities"
 	"sawu-monitor/kafka"
 )
 
-var app = fiber.New()
+var app *fiber.App
 
 func main() {
+	var fiberConfig = fiber.Config{}
+	fiberConfig.DisableStartupMessage = true
+	app = fiber.New(fiberConfig)
+
 	go kafka.DoKafkaConsumerStuff()
 	// Load config.yml
 	var defaults config.Conf
 	defaults.GetDefaults()
 
+	connector.ConnectDB()
 	AddMainController()
 	AddEventController()
 	AddSearchController()
@@ -27,8 +34,6 @@ func main() {
 		port = defaults.Port
 	}
 
-	var fiberConfig = new(fiber.Config)
-	fiberConfig.DisableStartupMessage = true
 	app.Listen(":" + port)
 }
 
@@ -48,9 +53,15 @@ func AddEventController() {
 		go kafka.SendNextStepEvent(topic, *event)
 		return c.SendString("sent.")
 	})
-	app.Get("/event/search", func(c *fiber.Ctx) error {
-		c.Accepts("application/json")
-		return c.SendString("found.")
+
+	app.Get("/event/search/:processInstanceID", func(c *fiber.Ctx) error {
+		processInstanceID := c.Params("processInstanceID")
+		events := connector.FindProcessEventsByProcessInstanceID(processInstanceID)
+
+		jsonString, _ := json.Marshal(events)
+		fmt.Println(string(jsonString))
+
+		return c.SendString(string(jsonString))
 	})
 
 }

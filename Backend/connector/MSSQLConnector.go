@@ -2,8 +2,6 @@ package connector
 
 import (
 	"fmt"
-	_ "github.com/denisenkom/go-mssqldb"
-	"github.com/jmoiron/sqlx"
 	"log"
 	"os"
 	"sawu-monitor/config"
@@ -11,6 +9,9 @@ import (
 	"sawu-monitor/mapper"
 	"strconv"
 	"strings"
+
+	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/jmoiron/sqlx"
 )
 
 var nextstepeventSchema = `
@@ -32,6 +33,7 @@ CREATE TABLE nextstepevent2 (
 
 var db *sqlx.DB
 
+// ConnectDB connects the application to the database
 func ConnectDB() {
 
 	var defaults config.Conf
@@ -80,23 +82,40 @@ func escapeDBletters(data string) string {
 	return strings.Replace(data, "'", "''", -1)
 }
 
-func FindProcessEventsByProcessInstanceID(processInstanceID string) []entities.NextStepEvent {
+// FindAllProcessesInstanceInfo returns a list of all process Instances
+func FindAllProcessesInstanceInfo() []entities.ProcessInstanceInfo {
+	// TODO: Implement
+	return nil
+}
+
+// FindProcessInstanceInfoByDataValue returns a ProcessInstanceInfo that has events containing the value
+func FindProcessInstanceInfoByDataValue(value string) entities.ProcessInstanceInfo {
+	processInstanceInfo := new(entities.ProcessInstanceInfo)
+
+	// TODO: Implement
+
+	return *processInstanceInfo
+}
+
+// FindProcessEventsByProcessInstanceID returns a list of Process Events in kafka format
+func FindProcessEventsByProcessInstanceID(processInstanceID string) []entities.KafkaNextStepEvent {
 	selectString := fmt.Sprintf("SELECT * FROM nextstepevent2 WHERE process_instance_id LIKE '%%%s%%'", processInstanceID)
 	fmt.Println(selectString)
 	mssqlNextStepEvents := []entities.MSSQLNextStepEvent{}
 	db.Select(&mssqlNextStepEvents, selectString)
 
-	var nextStepEvents []entities.NextStepEvent
+	var nextStepEvents []entities.KafkaNextStepEvent
 	for i := 0; i <= len(mssqlNextStepEvents)-1; i++ {
-		event := mapper.MapMssqlToInternal(mssqlNextStepEvents[i])
+		event := mapper.MapMssqlToKafka(mssqlNextStepEvents[i])
 		nextStepEvents = append(nextStepEvents, event)
 	}
 
 	return nextStepEvents
 }
 
-func CreateNewEvent(internalNextStepEvent entities.NextStepEvent) {
-	event := mapper.MapInternalToMssql(internalNextStepEvent)
+// CreateNewEvent triggers a new process event with the defined data (can be used to fix a process instance)
+func CreateNewEvent(internalNextStepEvent entities.KafkaNextStepEvent) {
+	event := mapper.MapKafkaToMssql(internalNextStepEvent)
 
 	insertString := fmt.Sprintf(
 		"INSERT INTO nextstepevent2"+

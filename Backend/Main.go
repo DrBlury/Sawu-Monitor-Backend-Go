@@ -43,7 +43,7 @@ func AddEventController() {
 	app.Get("/event/new", func(c *fiber.Ctx) error {
 		c.Accepts("application/json")
 
-		event := new(entities.NextStepEvent)
+		event := new(entities.KafkaNextStepEvent)
 		if err := c.BodyParser(event); err != nil {
 			return err
 		}

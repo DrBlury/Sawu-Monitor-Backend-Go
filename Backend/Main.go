@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"os"
 	"sawu-monitor/config"
 	"sawu-monitor/connector"
 	"sawu-monitor/entities"
 	"sawu-monitor/kafka"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 var app *fiber.App
@@ -57,10 +58,20 @@ func AddEventController() {
 	app.Get("/event/search/:processInstanceID", func(c *fiber.Ctx) error {
 		processInstanceID := c.Params("processInstanceID")
 		events := connector.FindProcessEventsByProcessInstanceID(processInstanceID)
-
 		jsonString, _ := json.Marshal(events)
-		fmt.Println(string(jsonString))
+		return c.SendString(string(jsonString))
+	})
 
+	app.Get("/process/search/value/:value", func(c *fiber.Ctx) error {
+		value := c.Params("value")
+		processInstanceInfos := connector.FindProcessInstanceInfoByDataValue(value)
+		jsonString, _ := json.Marshal(processInstanceInfos)
+		return c.SendString(string(jsonString))
+	})
+
+	app.Get("/process/all", func(c *fiber.Ctx) error {
+		processInstanceInfos := connector.FindAllProcessesInstanceInfo()
+		jsonString, _ := json.Marshal(processInstanceInfos)
 		return c.SendString(string(jsonString))
 	})
 

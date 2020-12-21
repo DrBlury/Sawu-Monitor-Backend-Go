@@ -84,17 +84,27 @@ func escapeDBletters(data string) string {
 
 // FindAllProcessesInstanceInfo returns a list of all process Instances
 func FindAllProcessesInstanceInfo() []entities.ProcessInstanceInfo {
-	// TODO: Implement
-	return nil
+	selectString := fmt.Sprintf("SELECT id, time_stamp, process_name, process_instance_id, (SELECT TOP 1 process_step from nextstepevent WHERE process_instance_id = PROCINFO.process_instance_id ORDER BY time_stamp DESC) AS status FROM nextstepevent AS PROCINFO WHERE datalength(coming_from_id)=0")
+	processInstanceInfos := []entities.ProcessInstanceInfo{}
+	err := db.Select(&processInstanceInfos, selectString)
+	if err != nil {
+		log.Fatal("Error while selecting all process instances as info: ", err)
+	}
+
+	return processInstanceInfos
 }
 
 // FindProcessInstanceInfoByDataValue returns a ProcessInstanceInfo that has events containing the value
-func FindProcessInstanceInfoByDataValue(value string) entities.ProcessInstanceInfo {
-	processInstanceInfo := new(entities.ProcessInstanceInfo)
+func FindProcessInstanceInfoByDataValue(value string) []entities.ProcessInstanceInfo {
+	searchValue := "%" + value + "%"
+	selectString := fmt.Sprintf("SELECT id, time_stamp, process_name, process_instance_id, (SELECT TOP 1 process_step from nextstepevent WHERE process_instance_id = PROCINFO.process_instance_id ORDER BY time_stamp DESC) AS status FROM nextstepevent AS PROCINFO WHERE variables LIKE '%s'", searchValue)
+	processInstanceInfos := []entities.ProcessInstanceInfo{}
+	err := db.Select(&processInstanceInfos, selectString)
+	if err != nil {
+		log.Fatal("Error while selecting all process instances as info: ", err)
+	}
 
-	// TODO: Implement
-
-	return *processInstanceInfo
+	return processInstanceInfos
 }
 
 // FindProcessEventsByProcessInstanceID returns a list of Process Events in kafka format

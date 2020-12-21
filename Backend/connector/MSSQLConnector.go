@@ -7,21 +7,21 @@ import (
 	"sawu-monitor/config"
 	"sawu-monitor/entities"
 	"sawu-monitor/mapper"
-	"strconv"
 	"strings"
 
+	// go-mssqldb is the database driver
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/jmoiron/sqlx"
 )
 
 var nextstepeventSchema = `
-CREATE TABLE nextstepevent2 (
+CREATE TABLE nextstepevent (
 	id varchar(255) NOT NULL,
 	coming_from_id varchar(255) NULL,
 	correlation_id varchar(255) NULL,
 	correlation_state varchar(255) NULL,
 	next_retry_at varchar(255) NULL,
-	process_instanceid varchar(255) NULL,
+	process_instance_id varchar(255) NULL,
 	process_name varchar(255) NULL,
 	process_step varchar(255) NULL,
 	retry_count varchar(255) NULL,
@@ -57,14 +57,14 @@ func ConnectDB() {
 		password = defaults.Database.Password
 	}
 
-	//Set default consumergroup if not set
+	//Set default port if not set
 	port, isPresent := os.LookupEnv("database_port")
 	if isPresent == false {
 		port = defaults.Database.Port
 	}
-	numberPort, _ := strconv.Atoi(port)
-	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d", server, user, password, numberPort)
 
+	connString := fmt.Sprintf("server=%s;port=%s;user id=%s;password=%s", server, port, user, password)
+	log.Println(connString)
 	var err error
 	db, err = sqlx.Connect("sqlserver", connString)
 
@@ -99,7 +99,7 @@ func FindProcessInstanceInfoByDataValue(value string) entities.ProcessInstanceIn
 
 // FindProcessEventsByProcessInstanceID returns a list of Process Events in kafka format
 func FindProcessEventsByProcessInstanceID(processInstanceID string) []entities.KafkaNextStepEvent {
-	selectString := fmt.Sprintf("SELECT * FROM nextstepevent2 WHERE process_instance_id LIKE '%%%s%%'", processInstanceID)
+	selectString := fmt.Sprintf("SELECT * FROM nextstepevent WHERE process_instance_id LIKE '%%%s%%'", processInstanceID)
 	fmt.Println(selectString)
 	mssqlNextStepEvents := []entities.MSSQLNextStepEvent{}
 	db.Select(&mssqlNextStepEvents, selectString)
@@ -118,7 +118,7 @@ func CreateNewEvent(internalNextStepEvent entities.KafkaNextStepEvent) {
 	event := mapper.MapKafkaToMssql(internalNextStepEvent)
 
 	insertString := fmt.Sprintf(
-		"INSERT INTO nextstepevent2"+
+		"INSERT INTO nextstepevent"+
 			"(id, coming_from_id, correlation_id, correlation_state, next_retry_at, process_instance_id, process_name, process_step, retry_count, time_stamp, variables, wait_id)"+
 			"VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');",
 		event.ID, event.ComingFromID, event.CorrelationID,
@@ -128,10 +128,11 @@ func CreateNewEvent(internalNextStepEvent entities.KafkaNextStepEvent) {
 		event.TimeStamp, escapeDBletters(event.Data),
 		event.WaitID)
 
-	fmt.Println(insertString)
 	tx := db.MustBegin()
 	result, err := tx.Exec(insertString)
-	fmt.Println(result)
-	fmt.Println(err)
+
+	if err != nil {
+		log.Printf("Error: %s \nResult: %s", err, result)
+	}
 	tx.Commit()
 }

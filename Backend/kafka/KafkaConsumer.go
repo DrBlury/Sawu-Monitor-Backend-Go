@@ -90,9 +90,10 @@ func DoKafkaConsumerStuff() {
 				if true == bool(err) {
 					recover()
 				}
-
 				jsonString, _ := json.Marshal(processEvent)
-				fmt.Println(string(jsonString))
+				if jsonString != nil {
+					fmt.Println(string(jsonString))
+				}
 
 				connector.CreateNewEvent(processEvent)
 				if err {
@@ -108,6 +109,9 @@ func DoKafkaConsumerStuff() {
 				if event.Code() == kafka.ErrAllBrokersDown {
 					run = false
 				}
+
+			case kafka.OffsetsCommitted:
+				continue
 			default:
 				fmt.Printf("Ignored %v\n", event)
 			}

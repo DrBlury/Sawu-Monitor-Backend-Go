@@ -9,10 +9,12 @@ kafka:
   consumer:
     consumergroup: "ConsumerTest"
     topics:
-      - bananentopic1
+      - example-process-go-StepOne
+      - example-process-go-StepTwo
+      - example-process-go-StepThree
+      - example-process-go-SAWUEND
 database:
-  server: "192.168.1.9"
+  server: "192.168.1.23"
   port: "1433"
   user: "sa"
   password: "MSsql123...?"
-  schema: master

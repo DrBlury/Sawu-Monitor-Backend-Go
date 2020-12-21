@@ -3,7 +3,6 @@ package kafka
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"os"
 	"os/signal"
 	"sawu-monitor/config"
@@ -11,6 +10,8 @@ import (
 	"sawu-monitor/entities"
 	"strings"
 	"syscall"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 var separator string
@@ -118,11 +119,11 @@ func DoKafkaConsumerStuff() {
 	os.Exit(0)
 }
 
-func deSerialize(kafkaRecord string) (entities.NextStepEvent, bool) {
+func deSerialize(kafkaRecord string) (entities.KafkaNextStepEvent, bool) {
 
 	seperatorIndex := strings.Index(kafkaRecord, separator)
 	runes := []rune(kafkaRecord)
-	processEvent := new(entities.NextStepEvent)
+	processEvent := new(entities.KafkaNextStepEvent)
 	processEvent.Data = string(runes[seperatorIndex+len(separator) : len(runes)])
 
 	caughtSeparator := false

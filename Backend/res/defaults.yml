@@ -11,7 +11,7 @@ kafka:
     topics:
       - bananentopic1
 database:
-  server: "192.168.1.23"
+  server: "192.168.1.9"
   port: "1433"
   user: "sa"
   password: "MSsql123...?"

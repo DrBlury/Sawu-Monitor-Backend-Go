@@ -1,6 +1,7 @@
 package entities
 
-type NextStepEvent struct {
+// KafkaNextStepEvent is the type compatible with the Sawu messages sent in kafka
+type KafkaNextStepEvent struct {
 	ID                string `json:"id"`
 	TimeStamp         string `json:"timestamp"`
 	ProcessName       string `json:"processname"`

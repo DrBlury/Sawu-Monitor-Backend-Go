@@ -2,12 +2,13 @@ package kafka
 
 import (
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"os"
 	"sawu-monitor/entities"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func SendNextStepEvent(topic string, nextStepEvent entities.NextStepEvent) {
+func SendNextStepEvent(topic string, nextStepEvent entities.KafkaNextStepEvent) {
 
 	//broker := os.Args[1]
 	//topic := os.Args[2]
@@ -47,7 +48,7 @@ func SendNextStepEvent(topic string, nextStepEvent entities.NextStepEvent) {
 	close(deliveryChan)
 }
 
-func serialize(nextStepEvent entities.NextStepEvent) string {
+func serialize(nextStepEvent entities.KafkaNextStepEvent) string {
 	event := fmt.Sprintf("id=%s,timestamp=%s,processName=%s,processInstanceID=%s,processStep=%s,internal=%s,retryCount=%s,$e%%,%s",
 		nextStepEvent.ID, nextStepEvent.TimeStamp, nextStepEvent.ProcessName, nextStepEvent.ProcessInstanceID, nextStepEvent.ProcessStep, nextStepEvent.Internal, nextStepEvent.RetryCount, nextStepEvent.Data)
 

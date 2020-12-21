@@ -1,5 +1,6 @@
 package entities
 
+// MSSQLNextStepEvent contains the data coming from the monitoring database
 type MSSQLNextStepEvent struct {
 	ID                string `json:"id" db:"id"`
 	TimeStamp         string `json:"timeStamp" db:"time_stamp"`

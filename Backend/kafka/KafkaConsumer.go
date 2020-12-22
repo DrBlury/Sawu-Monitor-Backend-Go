@@ -109,7 +109,6 @@ func DoKafkaConsumerStuff() {
 				if event.Code() == kafka.ErrAllBrokersDown {
 					run = false
 				}
-
 			case kafka.OffsetsCommitted:
 				continue
 			default:
@@ -128,7 +127,7 @@ func deSerialize(kafkaRecord string) (entities.KafkaNextStepEvent, bool) {
 	seperatorIndex := strings.Index(kafkaRecord, separator)
 	runes := []rune(kafkaRecord)
 	processEvent := new(entities.KafkaNextStepEvent)
-	processEvent.Data = string(runes[seperatorIndex+len(separator) : len(runes)])
+	processEvent.Data = string(runes[seperatorIndex+len(separator)])
 
 	caughtSeparator := false
 	eventValue := string(kafkaRecord)

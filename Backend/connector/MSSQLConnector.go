@@ -64,7 +64,6 @@ func ConnectDB() {
 	}
 
 	connString := fmt.Sprintf("server=%s;port=%s;user id=%s;password=%s", server, port, user, password)
-	log.Println(connString)
 	var err error
 	db, err = sqlx.Connect("sqlserver", connString)
 

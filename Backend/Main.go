@@ -10,6 +10,7 @@ import (
 	"sawu-monitor/kafka"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 var app *fiber.App
@@ -18,6 +19,7 @@ func main() {
 	var fiberConfig = fiber.Config{}
 	fiberConfig.DisableStartupMessage = true
 	app = fiber.New(fiberConfig)
+	app.Use(cors.New())
 
 	go kafka.DoKafkaConsumerStuff()
 	// Load config.yml
@@ -52,7 +54,6 @@ func AddEventController() {
 		fmt.Println(event)
 		topic := fmt.Sprintf("%s-%s", event.ProcessName, event.ProcessStep)
 		go kafka.SendNextStepEvent(topic, *event)
-		c.Response().Header.Add("Access-Control-Allow-Origin", "*")
 		return c.SendString("sent.")
 	})
 
@@ -60,7 +61,6 @@ func AddEventController() {
 		processInstanceID := c.Params("processInstanceID")
 		events := connector.FindProcessEventsByProcessInstanceID(processInstanceID)
 		jsonString, _ := json.Marshal(events)
-		c.Response().Header.Add("Access-Control-Allow-Origin", "*")
 		return c.SendString(string(jsonString))
 	})
 
@@ -68,14 +68,12 @@ func AddEventController() {
 		value := c.Params("value")
 		processInstanceInfos := connector.FindProcessInstanceInfoByDataValue(value)
 		jsonString, _ := json.Marshal(processInstanceInfos)
-		c.Response().Header.Add("Access-Control-Allow-Origin", "*")
 		return c.SendString(string(jsonString))
 	})
 
 	app.Get("/process/all", func(c *fiber.Ctx) error {
 		processInstanceInfos := connector.FindAllProcessesInstanceInfo()
 		jsonString, _ := json.Marshal(processInstanceInfos)
-		c.Response().Header.Add("Access-Control-Allow-Origin", "*")
 		return c.SendString(string(jsonString))
 	})
 

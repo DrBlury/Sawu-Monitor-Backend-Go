@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  kafka:
+    image: johnnypark/kafka-zookeeper
+    ports:
+      - "9092:9092"
+      - "2181:2181"
+    environment:
+      - ADVERTISED_HOST=localhost
+      - NUM_PARTITIONS=10
+
+  mssql:
+    image: "mcr.microsoft.com/mssql/server"
+    ports:
+      - "1433:1433"
+    environment:
+        SA_PASSWORD: "Your_password123"
+        ACCEPT_EULA: "Y"

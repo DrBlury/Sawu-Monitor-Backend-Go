@@ -27,7 +27,6 @@ func main() {
 	defaults.GetDefaults()
 
 	connector.ConnectDB()
-	AddMainController()
 	AddEventController()
 	AddSearchController()
 
@@ -43,7 +42,7 @@ func main() {
 // AddEventController creates the controller for events
 func AddEventController() {
 	// Catches new events and sends them to kafka
-	app.Get("/event/new", func(c *fiber.Ctx) error {
+	app.Post("/event/new", func(c *fiber.Ctx) error {
 		c.Accepts("application/json")
 
 		event := new(entities.KafkaNextStepEvent)
@@ -77,11 +76,6 @@ func AddEventController() {
 		return c.SendString(string(jsonString))
 	})
 
-}
-
-// AddMainController creates the controller for all sorts of things
-func AddMainController() {
-	app.Static("/", "./public")
 }
 
 // AddSearchController creates the controller for search requests

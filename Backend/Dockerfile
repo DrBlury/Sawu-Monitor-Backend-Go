@@ -30,7 +30,6 @@ RUN cp /build/main .
 ######################################
 FROM scratch
 LABEL AUTHOR="JULIAN BENSCH"
-COPY /public ./public
 COPY /res/defaults.yml ./res/
 COPY --from=builder /dist/main .
 CMD ["./main"]

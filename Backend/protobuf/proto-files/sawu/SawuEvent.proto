@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "sawu-engine/entitiespb";
+
+message SawuEvent {
+  string ID = 1;
+	string TimeStamp = 2;
+	string ProcessName = 3;
+	string ComingFromID = 4;
+	string ProcessStep = 5;
+	string ProcessStepClass = 6;
+	string ProcessInstanceID = 7;
+	int32 CorrelationState = 8;
+	string CorrelationID = 9;
+	int32 RetryCount = 10;
+	string NextRetryAt = 11;
+	bool Internal = 12;
+	string WaitID = 13;
+	string Error = 14;
+	bytes Data = 15;
+}

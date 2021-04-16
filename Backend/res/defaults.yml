@@ -1,20 +1,18 @@
 port: 3000
-username: admin
-password: 12345
 sawu:
   separator: "$e%,"
 kafka:
   broker:
-    ipaddress: "192.168.1.9"
+    ipaddress: "127.0.0.1"
   consumer:
-    consumergroup: "ConsumerTest"
+    consumergroup: "Sawu-Monitor"
     topics:
       - example-process-go-StepOne
       - example-process-go-StepTwo
       - example-process-go-StepThree
       - example-process-go-SAWUEND
 database:
-  server: "192.168.1.55"
+  server: "127.0.0.1"
   port: "1433"
   user: "sa"
-  password: "MSsql123!_"
+  password: "Your_password123"

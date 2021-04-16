@@ -1,7 +1,6 @@
 package kafka
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -90,10 +89,6 @@ func DoKafkaConsumerStuff() {
 				if true == bool(err) {
 					recover()
 				}
-				jsonString, _ := json.Marshal(processEvent)
-				if jsonString != nil {
-					fmt.Println(string(jsonString))
-				}
 
 				connector.CreateNewEvent(processEvent)
 				if err {
@@ -123,11 +118,10 @@ func DoKafkaConsumerStuff() {
 }
 
 func deSerialize(kafkaRecord string) (entities.KafkaNextStepEvent, bool) {
-
 	seperatorIndex := strings.Index(kafkaRecord, separator)
 	runes := []rune(kafkaRecord)
 	processEvent := new(entities.KafkaNextStepEvent)
-	processEvent.Data = string(runes[seperatorIndex+len(separator)])
+	processEvent.Data = string(runes[seperatorIndex+len(separator):])
 
 	caughtSeparator := false
 	eventValue := string(kafkaRecord)

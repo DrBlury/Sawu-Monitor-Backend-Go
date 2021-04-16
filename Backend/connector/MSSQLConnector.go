@@ -96,29 +96,46 @@ func FindAllProcessesInstanceInfo() []entities.ProcessInstanceInfo {
 // FindProcessInstanceInfoByDataValue returns a ProcessInstanceInfo that has events containing the value
 func FindProcessInstanceInfoByDataValue(value string) []entities.ProcessInstanceInfo {
 	searchValue := "%" + value + "%"
-	selectString := fmt.Sprintf("SELECT id, time_stamp, process_name, process_instance_id, (SELECT TOP 1 process_step from nextstepevent WHERE process_instance_id = PROCINFO.process_instance_id ORDER BY time_stamp DESC) AS status FROM nextstepevent AS PROCINFO WHERE variables LIKE '%s'", searchValue)
+	selectString := `SELECT id, time_stamp, process_name, process_instance_id, 
+	(SELECT TOP 1 process_step from nextstepevent 
+		WHERE process_instance_id = PROCINFO.process_instance_id 
+		ORDER BY time_stamp DESC) AS status FROM nextstepevent 
+		AS PROCINFO WHERE variables LIKE @p1
+	`
+
+	/*
+		SELECT a.process_instance_id, MAX(a.stamptime), a.process_step FROM
+			(
+				SELECT id, MAX(time_stamp) as stamptime, process_name, process_instance_id, process_step
+				from nextstepevent
+				WHERE variables LIKE '%florian%'
+				GROUP BY id, process_name, process_instance_id, process_step
+			) a
+		GROUP BY a.process_instance_id, a.process_step, a.stamptime
+	*/
+
+	fmt.Println(selectString)
 	processInstanceInfos := []entities.ProcessInstanceInfo{}
-	err := db.Select(&processInstanceInfos, selectString)
+	err := db.Select(&processInstanceInfos, selectString, searchValue)
 	if err != nil {
 		log.Fatal("Error while selecting all process instances as info: ", err)
 	}
-
 	return processInstanceInfos
 }
 
 // FindProcessEventsByProcessInstanceID returns a list of Process Events in kafka format
 func FindProcessEventsByProcessInstanceID(processInstanceID string) []entities.KafkaNextStepEvent {
-	selectString := fmt.Sprintf("SELECT * FROM nextstepevent WHERE process_instance_id LIKE '%%%s%%'", processInstanceID)
+	searchValue := "%" + processInstanceID + "%"
+	selectString := "SELECT * FROM nextstepevent WHERE process_instance_id LIKE @p1"
 	fmt.Println(selectString)
 	mssqlNextStepEvents := []entities.MSSQLNextStepEvent{}
-	db.Select(&mssqlNextStepEvents, selectString)
+	db.Select(&mssqlNextStepEvents, selectString, searchValue)
 
 	var nextStepEvents []entities.KafkaNextStepEvent
 	for i := 0; i <= len(mssqlNextStepEvents)-1; i++ {
 		event := mapper.MapMssqlToKafka(mssqlNextStepEvents[i])
 		nextStepEvents = append(nextStepEvents, event)
 	}
-
 	return nextStepEvents
 }
 
@@ -126,19 +143,20 @@ func FindProcessEventsByProcessInstanceID(processInstanceID string) []entities.K
 func CreateNewEvent(internalNextStepEvent entities.KafkaNextStepEvent) {
 	event := mapper.MapKafkaToMssql(internalNextStepEvent)
 
-	insertString := fmt.Sprintf(
-		"INSERT INTO nextstepevent"+
-			"(id, coming_from_id, correlation_id, correlation_state, next_retry_at, process_instance_id, process_name, process_step, retry_count, time_stamp, variables, wait_id)"+
-			"VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');",
+	insertString :=
+		"INSERT INTO nextstepevent" +
+			"(id, coming_from_id, correlation_id, correlation_state, next_retry_at, process_instance_id, process_name, process_step, retry_count, time_stamp, variables, wait_id)" +
+			"VALUES(@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12);"
+
+	tx := db.MustBegin()
+	fmt.Println(event.Data)
+	result, err := tx.Exec(insertString,
 		event.ID, event.ComingFromID, event.CorrelationID,
 		event.CorrelationState, event.NextRetryAt,
 		event.ProcessInstanceID, event.ProcessName,
 		event.ProcessStep, event.RetryCount,
-		event.TimeStamp, escapeDBletters(event.Data),
+		event.TimeStamp, event.Data,
 		event.WaitID)
-
-	tx := db.MustBegin()
-	result, err := tx.Exec(insertString)
 
 	if err != nil {
 		log.Printf("Error: %s \nResult: %s", err, result)

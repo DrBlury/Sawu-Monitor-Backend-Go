@@ -4,17 +4,17 @@ package entities
 type KafkaNextStepEvent struct {
 	ID                string `json:"id"`
 	TimeStamp         string `json:"timestamp"`
-	ProcessName       string `json:"processname"`
-	ComingFromID      string `json:"comingfromid"`
-	ProcessStep       string `json:"processstep"`
-	ProcessStepClass  string `json:"processstepclass"`
-	ProcessInstanceID string `json:"processinstanceid"`
-	CorrelationState  string `json:"correlationstate"`
-	CorrelationID     string `json:"correlationid"`
-	RetryCount        string `json:"retrycount"`
-	NextRetryAt       string `json:"nextretryat"`
+	ProcessName       string `json:"processName"`
+	ComingFromID      string `json:"comingFromId"`
+	ProcessStep       string `json:"processStep"`
+	ProcessInstanceID string `json:"processInstanceId"`
+	CorrelationState  string `json:"correlationState"`
+	CorrelationID     string `json:"correlationId"`
+	RetryCount        string `json:"retryCount"`
+	NextRetryAt       string `json:"nextRetryAt"`
 	Internal          string `json:"internal"`
-	WaitID            string `json:"waitid"`
+	WaitID            string `json:"waitId"`
 	Error             string `json:"error"`
 	Data              string `json:"data"`
+	SourceTopic       string `json:"sourceTopic"`
 }

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"log"
+	"net/url"
 	"os"
 	"sawu-monitor/config"
 	"sawu-monitor/connector"
@@ -16,65 +17,76 @@ import (
 var app *fiber.App
 
 func main() {
-	var fiberConfig = fiber.Config{}
-	fiberConfig.DisableStartupMessage = true
-	app = fiber.New(fiberConfig)
-	app.Use(cors.New())
+    var fiberConfig = fiber.Config{}
+    fiberConfig.DisableStartupMessage = true
+    app = fiber.New(fiberConfig)
+    app.Use(cors.New())
 
-	go kafka.DoKafkaConsumerStuff()
-	// Load config.yml
-	var defaults config.Conf
-	defaults.GetDefaults()
+    go kafka.DoKafkaConsumerStuff()
+    // Load config.yml
+    var defaults config.Conf
+    defaults.GetDefaults()
 
-	connector.ConnectDB()
-	AddEventController()
-	AddSearchController()
+    connector.ConnectDB()
+    AddEventController()
+    AddSearchController()
 
-	//Set default port if not set
-	port, isPresent := os.LookupEnv("fiber_port")
-	if isPresent == false {
-		port = defaults.Port
-	}
+    //Set default port if not set
+    port, isPresent := os.LookupEnv("fiber_port")
+    if !isPresent {
+        port = defaults.Port
+    }
 
-	app.Listen(":" + port)
+    app.Listen(":" + port)
 }
 
 // AddEventController creates the controller for events
 func AddEventController() {
-	// Catches new events and sends them to kafka
-	app.Post("/event/new", func(c *fiber.Ctx) error {
-		c.Accepts("application/json")
+    // Catches new events and sends them to kafka
+    app.Post("/events", func(c *fiber.Ctx) error {
+        c.Accepts("application/json")
 
-		event := new(entities.KafkaNextStepEvent)
-		if err := c.BodyParser(event); err != nil {
-			return err
-		}
+        event := new(entities.KafkaNextStepEvent)
+        if err := c.BodyParser(event); err != nil {
+            return err
+        }
 
-		fmt.Println(event)
-		topic := fmt.Sprintf("%s-%s", event.ProcessName, event.ProcessStep)
-		go kafka.SendNextStepEvent(topic, *event)
-		return c.SendString("sent.")
-	})
+        fmt.Println(event)
+        topic := fmt.Sprintf("%s-%s", event.ProcessName, event.ProcessStep)
+        go kafka.SendNextStepEvent(topic, *event)
+        return c.SendString("sent.")
+    })
 
-	app.Get("/event/search/:processInstanceID", func(c *fiber.Ctx) error {
-		processInstanceID := c.Params("processInstanceID")
-		events := connector.FindProcessEventsByProcessInstanceID(processInstanceID)
-		jsonString, _ := json.Marshal(events)
-		return c.SendString(string(jsonString))
-	})
+    app.Get("/events", func(c *fiber.Ctx) error {
+        // TODO add pagination?
+        processInstanceID := c.Query("processInstanceID")
+        if processInstanceID == "" {
+            return c.Status(400).JSON(&fiber.Map{
+                "error": "Query 'processInstanceID' is required",
+            })
+        }
 
-	app.Get("/process/search/value/:value", func(c *fiber.Ctx) error {
-		value := c.Params("value")
-		processInstanceInfos := connector.FindProcessInstanceInfoByDataValue(value)
-		jsonString, _ := json.Marshal(processInstanceInfos)
-		return c.SendString(string(jsonString))
-	})
+        events := connector.FindProcessEventsByProcessInstanceID(processInstanceID)
+        return c.JSON(&events)
+    })
 
-	app.Get("/process/all", func(c *fiber.Ctx) error {
-		processInstanceInfos := connector.FindAllProcessesInstanceInfo()
-		jsonString, _ := json.Marshal(processInstanceInfos)
-		return c.SendString(string(jsonString))
-	})
+    app.Get("/processes", func(c *fiber.Ctx) error {
+        value, err := url.QueryUnescape(c.Query("value"))
+        if err != nil {
+            log.Fatal(err)
+            return c.Status(400).JSON(&fiber.Map{
+                "error": fmt.Sprintf("Failed to decode query param 'value': %s", c.Params("value")),
+            })
+        }
+
+        if value == "" {
+            processInstanceInfos := connector.FindAllProcessesInstanceInfo()
+            return c.JSON(&processInstanceInfos)
+        }
+
+        processInstanceInfos := connector.FindProcessInstanceInfoByDataValue(value)
+        return c.JSON(&processInstanceInfos)
+    })
 
 }
 
